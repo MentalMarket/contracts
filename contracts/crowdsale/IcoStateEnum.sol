@@ -1,0 +1,5 @@
+pragma solidity 0.4.24;
+
+contract IcoStateEnum {
+    enum IcoState { INIT, ICO, PAUSED, FAILURE, DISTRIBUTING_BONUSES, SUCCEEDED, HARDCAP_SUCCESS, SOFTCAP_SUCCESS }
+}
