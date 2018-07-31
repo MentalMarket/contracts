@@ -1,16 +1,13 @@
 require('truffle-test-utils').init();
 require('chai').use(require('chai-as-promised')).should();
 const createKeccakHash = require('keccak');
-const Reverter = require('./helpers/reverter');
 const Asserts = require('./helpers/asserts');
-const Token = artifacts.require('MNTL');
+const Token = artifacts.require('MNTLTestHelper'); //MNTLTestHelper
 const Utils =  require('./helpers/utils.js');
 
 
 contract('MNTL', function(accounts) {
     const utils = new Utils();
-    const reverter = new Reverter(web3);
-    afterEach('revert', reverter.revert);
 
     let token;
     const owner = web3.eth.accounts[0];
@@ -18,7 +15,7 @@ contract('MNTL', function(accounts) {
     const ERROR_MSG = 'VM Exception while processing transaction: revert';
     const decimals = Math.pow(10, 18);
     const initialSupply = MMT(utils.initialSupply);
-    const aboveInitialSupply = MMT(18000001);
+    const aboveInitialSupply = initialSupply + MMT(1);
     const roles = utils.roles(accounts);
 
     // converts amount of MMT into MMT-wei
@@ -27,10 +24,8 @@ contract('MNTL', function(accounts) {
         return amount * decimals;
     }
 
-    before('setup', () => {
-        return Token.deployed()
-            .then(instance => token = instance)
-            .then(reverter.snapshot);
+    beforeEach('setup', async () => {
+        token = await Token.new();
     });
 
     it('owner token', async function () {
@@ -56,7 +51,7 @@ contract('MNTL', function(accounts) {
     it('buy token', async function () {
         const _to = roles.investor1;
 
-        const amount = MMT(10); //
+        const amount = MMT(10);
         assert.equal(await token.availableTokens(), initialSupply);
         await token.buy(_to, amount).should.be.rejectedWith(ERROR_MSG); // permitted only a controller
 
