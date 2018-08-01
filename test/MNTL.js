@@ -183,7 +183,6 @@ contract('MNTL', function(accounts) {
         //// PRE ICO ///
 
         controller = roles.controller3;
-        let controllers_count = (await this.token.mControllersCount()).toNumber();
         tx_log = await this.token.setPreIco(controller);
 
         assert.web3Event(tx_log, {

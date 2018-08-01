@@ -22,7 +22,6 @@ contract Controller is MultiOwnable {
     enum State { None, PrivateSale, SecondPrivateSale, PreIco, Ico }
 
     constructor () public {
-        mControllersCount = 0;
         state = State.None;
     }
 
@@ -87,10 +86,8 @@ contract Controller is MultiOwnable {
 
     /// @dev sets the controller
     function setController(address _controller) private {
-        require(mControllersCount < 4); // max 4 controllers
         mController = _controller;
         controllers[_controller] = true;
-        mControllersCount +=1;
         emit ControllerSet(mController);
     }
 
@@ -99,6 +96,5 @@ contract Controller is MultiOwnable {
 
     /// @notice address of entity entitled to mint new tokens
     address public mController;
-    uint256 public mControllersCount;
     State public state;
 }
