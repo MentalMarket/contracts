@@ -17,7 +17,7 @@ contract PreSaleTestHelper is PreSale, TimeNow {
     }
 
     function getWeSolved() public view returns(uint256) {
-        return weSolved;
+        return weSold;
     }
 
     function setHardCap(uint _hardcap) public {
@@ -29,6 +29,6 @@ contract PreSaleTestHelper is PreSale, TimeNow {
     }
 
     function getAvailableTokens() public view returns(uint256) {
-        return hardcap - weSolved;
+        return hardcap - weSold;
     }
 }

@@ -25,7 +25,7 @@ contract BaseCrowdsale is Pausable, IcoStateEnum {
     uint256 public softcap;
     uint256 public hardcap;
     uint256 public weRaised;
-    uint256 public weSolved;
+    uint256 public weSold;
     address public wallet; // withdraw wallet
     IcoState public state; // ICO current state
 
@@ -49,17 +49,17 @@ contract BaseCrowdsale is Pausable, IcoStateEnum {
     }
 
     modifier mUnderHardcap() {
-        require(weSolved < hardcap);
+        require(weSold < hardcap);
         _;
     }
 
     modifier mUnderSoftcap() {
-        require(weSolved < softcap);
+        require(weSold < softcap);
         _;
     }
 
     modifier mOverSoftcap() {
-        require(weSolved >= softcap);
+        require(weSold >= softcap);
         _;
     }
 
@@ -86,7 +86,7 @@ contract BaseCrowdsale is Pausable, IcoStateEnum {
         softcap = _softcap;
         hardcap = _hardcap;
         weRaised = 0; // ethers
-        weSolved = 0; // tokens
+        weSold = 0; // tokens
         wallet = _wallet;
         state = IcoState.INIT;
     }
@@ -100,13 +100,6 @@ contract BaseCrowdsale is Pausable, IcoStateEnum {
     function isActive() public view returns(bool) {
         return getCurrentTime() > startAt && getCurrentTime() < closeAt;
     }
-
-    function changeCloseAt(uint _closeAt) public onlyOwner mOverSoftcap isCrowdsaleOpen {
-        require(_closeAt > startAt);
-        emit ChangeCloseAt(closeAt, _closeAt);
-        closeAt = _closeAt;
-    }
-
 
     // PUBLIC interface: owners: maintenance
 

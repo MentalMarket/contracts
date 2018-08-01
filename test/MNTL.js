@@ -16,13 +16,13 @@ contract('MNTL', function(accounts) {
     const showGasUsed = false;
     const ERROR_MSG = 'VM Exception while processing transaction: revert';
     const decimals = utils.decimals;
-    const initialSupply = MMT(utils.initialSupply);
-    const aboveInitialSupply = initialSupply.add(MMT(1));
+    const initialSupply = MNTL(utils.initialSupply);
+    const aboveInitialSupply = initialSupply.add(MNTL(1));
     const roles = utils.roles(accounts);
     let start_time;
 
-    // converts amount of MMT into MMT-wei
-    function MMT(amount) {
+    // converts amount of MNTL into MNTL-wei
+    function MNTL(amount) {
         return new BigNumber(amount).mul(decimals);
     }
 
@@ -62,7 +62,7 @@ contract('MNTL', function(accounts) {
     it('buy token', async () => {
         const _to = roles.investor1;
 
-        const amount = MMT(10);
+        const amount = MNTL(10);
         (await this.token.availableTokens()).should.be.bignumber.equal(initialSupply);
         await this.token.buy(_to, amount).should.be.rejectedWith(ERROR_MSG); // permitted only a controller
 
@@ -102,8 +102,8 @@ contract('MNTL', function(accounts) {
     it('refund token', async () => {
         await this.token.setPrivateSale(roles.controller);
 
-        const amount = MMT(10);
-        const invalid_amount = MMT(11);
+        const amount = MNTL(10);
+        const invalid_amount = MNTL(11);
         await this.token.buy(roles.investor1, amount, {from: roles.controller});
 
         await this.token.refund(roles.investor1, invalid_amount, {from: roles.controller}).should.be.rejectedWith(ERROR_MSG); // запрещен возврат большего кол-ва токенов
@@ -121,8 +121,8 @@ contract('MNTL', function(accounts) {
     });
 
     it('transfer tokens', async () => {
-        const tokens1 = MMT(10);
-        const tokens2 = MMT(10);
+        const tokens1 = MNTL(10);
+        const tokens2 = MNTL(10);
 
         // buy tokens
         await this.token.setPrivateSale(roles.controller);

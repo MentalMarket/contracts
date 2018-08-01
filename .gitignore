@@ -40,3 +40,6 @@ build/
 .idea
 mntl_abi.js
 .DS_Store
+
+# builds
+PreSale_flat.sol
