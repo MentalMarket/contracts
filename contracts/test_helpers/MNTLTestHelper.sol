@@ -11,8 +11,6 @@ contract MNTLTestHelper is MNTL {
      */
     constructor (
     ) public {
-      name = "MentalCoin";
-      symbol = "MNTL";
       uint256 initialSupply = 18000000;
       totalSupply_ = initialSupply * 10 ** uint256(decimals);
       balances[this] = totalSupply_;

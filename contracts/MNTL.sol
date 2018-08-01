@@ -6,9 +6,9 @@ import "./crowdsale/iCrowdsale.sol";
 
 contract MNTL is BurnableToken, Pausable {
     // Public variables of the token
-    string public name;
-    string public symbol;
-    uint8 public decimals = 18;
+    string public constant name = "MentalCoin";
+    string public constant symbol = "MNTL";
+    uint8 public constant decimals = 18;
 
     modifier balanceAvailable(uint256 amount) {
         require(balances[this] >= amount);
@@ -28,8 +28,6 @@ contract MNTL is BurnableToken, Pausable {
      */
     constructor (
     ) public {
-      name = "MentalCoin";
-      symbol = "MNTL";
       uint256 initialSupply = 50625000;
       totalSupply_ = initialSupply * 10 ** uint256(decimals);
       balances[this] = totalSupply_;
