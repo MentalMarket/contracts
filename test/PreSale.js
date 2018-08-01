@@ -3,7 +3,7 @@ require('chai').use(require('chai-as-promised')).should();
 const createKeccakHash = require('keccak');
 const Reverter = require('./helpers/reverter');
 const Asserts = require('./helpers/asserts');
-const Token = artifacts.require('MNTL');
+const Token = artifacts.require('./test_helpers/MNTLTestHelper.sol');
 const PreSale = artifacts.require("./test_helpers/PreSaleTestHelper.sol");
 const Utils =  require('./helpers/utils.js');
 
@@ -39,16 +39,14 @@ contract('PreSale', function(accounts) {
         return MMT(tokens);
     }
 
-
     before('setup', async () => {
-        token = await Token.deployed();
-
         const date = new Date();
         const start_at = (new Date(date.getFullYear(), date.getMonth(), 1)).getTime() / 1000;
         const close_at = (new Date(date.getFullYear(), date.getMonth() + 1, 0)).getTime() / 1000;
         const softcap = 1250000;
         const hardcap = 3250000;
 
+        token = await Token.new();
         presale = await PreSale.new(token.address, start_at, close_at, softcap, hardcap, roles.wallet);
         await reverter.snapshot();
     });
