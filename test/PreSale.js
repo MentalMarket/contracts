@@ -61,6 +61,18 @@ contract('PreSale', function(accounts) {
         assert.equal(await presale.closeAt(), close_at);
     });
 
+    it('prohibition of purchase with inactive ico', async function (){
+        await presale.sendTransaction({from: roles.investor1, value: web3.toWei(2, 'ether')}).should.be.rejectedWith(ERROR_MSG);
+
+        await token.setPrivateSale(presale.address);
+
+        await presale.setTime(start_at - 1);
+        await presale.sendTransaction({from: roles.investor1, value: web3.toWei(2, 'ether')}).should.be.rejectedWith(ERROR_MSG);
+
+        await presale.setTime(close_at + 1);
+        await presale.sendTransaction({from: roles.investor1, value: web3.toWei(2, 'ether')}).should.be.rejectedWith(ERROR_MSG);
+    });
+
     it('payment', async function() {
         await token.setPrivateSale(presale.address);
 
