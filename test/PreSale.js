@@ -16,7 +16,7 @@ contract('PreSale', function(accounts) {
     let token;
     let presale;
     const ERROR_MSG = 'VM Exception while processing transaction: revert';
-    const decimals = Math.pow(10, 18);
+    const decimals = utils.decimals;
 
     const date = new Date();
     const start_at = (new Date(date.getFullYear(), date.getMonth(), 1)).getTime() / 1000;  // ICO start
@@ -43,8 +43,8 @@ contract('PreSale', function(accounts) {
         const date = new Date();
         const start_at = (new Date(date.getFullYear(), date.getMonth(), 1)).getTime() / 1000;
         const close_at = (new Date(date.getFullYear(), date.getMonth() + 1, 0)).getTime() / 1000;
-        const softcap = 1250000;
-        const hardcap = 3250000;
+        const softcap = MMT(1250000);
+        const hardcap = MMT(3250000);
 
         token = await Token.new();
         presale = await PreSale.new(token.address, start_at, close_at, softcap, hardcap, roles.wallet);
@@ -155,7 +155,7 @@ contract('PreSale', function(accounts) {
 
     it('close ICO: we raised above softcap', async function() {
         await token.setPrivateSale(presale.address);
-        await presale.setSoftCap(30000);
+        await presale.setSoftCap(MMT(30000));
 
         const sum = Number(web3.toWei(3, 'ether'));
         await presale.sendTransaction({from: roles.investor1, value: sum});
@@ -176,7 +176,7 @@ contract('PreSale', function(accounts) {
 
     it('auto close ICO: we raised equal hardcap', async function() {
         await token.setPrivateSale(presale.address);
-        await presale.setHardCap(30000);
+        await presale.setHardCap(MMT(30000));
         const wallet_balance = (await web3.eth.getBalance(roles.wallet)).toNumber();
 
         const total_sum = Number(web3.toWei(3, 'ether'));
@@ -265,7 +265,7 @@ contract('PreSale', function(accounts) {
 
     it('change close_at', async () => {
         await token.setPrivateSale(presale.address);
-        await presale.setSoftCap(10000);
+        await presale.setSoftCap(MMT(10000));
 
         const investor1_sum = MMT(1);
         const newCloseAt = start_at + 1;

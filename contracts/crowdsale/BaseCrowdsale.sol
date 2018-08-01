@@ -83,8 +83,8 @@ contract BaseCrowdsale is Pausable, IcoStateEnum {
         token = _token;
         startAt = _startAt;
         closeAt = _closeAt;
-        softcap = _softcap.mul(uint256(10) ** token.decimals());
-        hardcap = _hardcap.mul(uint256(10) ** token.decimals());
+        softcap = _softcap;
+        hardcap = _hardcap;
         weRaised = 0; // ethers
         weSolved = 0; // tokens
         wallet = _wallet;

@@ -11,8 +11,7 @@ contract MNTLTestHelper is MNTL {
      */
     constructor (
     ) public {
-      uint256 initialSupply = 18000000;
-      totalSupply_ = initialSupply * 10 ** uint256(decimals);
+      totalSupply_ = 18000000 * 1 ether;
       balances[this] = totalSupply_;
       emit Transfer(address(0), this, totalSupply_);
     }

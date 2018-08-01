@@ -28,8 +28,7 @@ contract MNTL is BurnableToken, Pausable {
      */
     constructor (
     ) public {
-      uint256 initialSupply = 50625000;
-      totalSupply_ = initialSupply * 10 ** uint256(decimals);
+      totalSupply_ = 50625000 * 1 ether;
       balances[this] = totalSupply_;
       emit Transfer(address(0), this, totalSupply_);
     }

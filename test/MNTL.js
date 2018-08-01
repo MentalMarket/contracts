@@ -15,9 +15,9 @@ contract('MNTL', function(accounts) {
     const owner = web3.eth.accounts[0];
     const showGasUsed = false;
     const ERROR_MSG = 'VM Exception while processing transaction: revert';
-    const decimals = web3.toWei(1, 'ether');
+    const decimals = utils.decimals;
     const initialSupply = MMT(utils.initialSupply);
-    const aboveInitialSupply = initialSupply + MMT(1);
+    const aboveInitialSupply = initialSupply.add(MMT(1));
     const roles = utils.roles(accounts);
     let start_time;
 
