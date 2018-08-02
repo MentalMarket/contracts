@@ -15,7 +15,7 @@
     "chai-bignumber": "^2.0.2",
     "keccak": "1.4.0",
     "performance-now": "^2.1.0",
-    "truffle-flattener": "1.2.5",
+    "truffle-flattener": "^1.2.5",
     "truffle-test-utils": "0.1.0"
   },
   "scripts": {
