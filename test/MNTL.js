@@ -44,7 +44,7 @@ contract('MNTL', function(accounts) {
     });
 
     it('test controller', async () => {
-        const tx_log = await this.token.setPrivateSale(roles.controller);
+        const tx_log = await this.token.setController(roles.controller);
         assert.web3Event(tx_log, {
             event: 'ControllerSet',
             args: {
@@ -66,7 +66,7 @@ contract('MNTL', function(accounts) {
         (await this.token.availableTokens()).should.be.bignumber.equal(initialSupply);
         await this.token.buy(_to, amount).should.be.rejectedWith(ERROR_MSG); // permitted only a controller
 
-        await this.token.setPrivateSale(roles.controller);
+        await this.token.setController(roles.controller);
         await this.token.buy(_to, amount, {from: roles.controller});
         assert.equal((await this.token.balanceOf(_to)).toNumber(), amount);
         assert.equal((await this.token.availableTokens()).toNumber(), initialSupply - amount);
@@ -76,7 +76,7 @@ contract('MNTL', function(accounts) {
 
     it('burn token', async () => {
         await this.token.burn(this.token.address, initialSupply).should.be.rejectedWith(ERROR_MSG); // permit only controller
-        await this.token.setPrivateSale(roles.controller);
+        await this.token.setController(roles.controller);
 
         await this.token.burn(this.token.address, aboveInitialSupply).should.be.rejectedWith(ERROR_MSG); // запрещено сжигание токенов больше баланса
 
@@ -100,7 +100,7 @@ contract('MNTL', function(accounts) {
     });
 
     it('refund token', async () => {
-        await this.token.setPrivateSale(roles.controller);
+        await this.token.setController(roles.controller);
 
         const amount = MNTL(10);
         const invalid_amount = MNTL(11);
@@ -125,7 +125,7 @@ contract('MNTL', function(accounts) {
         const tokens2 = MNTL(10);
 
         // buy tokens
-        await this.token.setPrivateSale(roles.controller);
+        await this.token.setController(roles.controller);
         await this.token.buy(roles.investor1, tokens1.add(tokens2), {from: roles.controller});
         await this.token.detachController({from: roles.controller});
 
@@ -135,135 +135,16 @@ contract('MNTL', function(accounts) {
         await this.token.transferFrom(roles.investor1, roles.investor2, tokens2);
     });
 
-    it('ICO stages', async () => {
-        //// PRIVATE SALE ///
-
+    it('setController', async () => {
         let controller = roles.controller;
-        let tx_log = await this.token.setPrivateSale(controller);
-        assert.web3Event(tx_log, {
-            event: 'ChangeState',
-            args: {
-                "from": 0, // None
-                "to" : 1, // PrivateSale
-            },
-        }, 'The event is emitted');
+        let tx_log = await this.token.setController(controller);
         assert.web3Event(tx_log, {
             event: 'ControllerSet',
             args: {
                 "controller" : controller,
             },
         }, 'The event is emitted');
-        assert.equal(await this.token.state(), 1);
         assert.equal(await this.token.mController(), controller);
         await this.token.detachController({from: controller});
-
-
-        //// SECOND PRIVATE SALE ///
-
-        controller = roles.controller2;
-        tx_log = await this.token.setSecondPrivateSale(controller);
-        assert.web3Event(tx_log, {
-            event: 'ChangeState',
-            args: {
-                "from": 1, // PrivateSale
-                "to" : 2, // SecondPrivateSale
-            },
-        }, 'The event is emitted');
-        assert.web3Event(tx_log, {
-            event: 'ControllerSet',
-            args: {
-                "controller" : controller,
-            },
-        }, 'The event is emitted');
-        assert.equal(await this.token.state(), 2);
-        assert.equal(await this.token.mController(), controller);
-        await this.token.detachController({from: controller});
-
-
-        //// PRE ICO ///
-
-        controller = roles.controller3;
-        tx_log = await this.token.setPreIco(controller);
-
-        assert.web3Event(tx_log, {
-            event: 'ChangeState',
-            args: {
-                "from": 2, // SecondPrivateSale
-                "to" : 3, // PreIco
-            },
-        }, 'The event is emitted');
-        assert.web3Event(tx_log, {
-            event: 'ControllerSet',
-            args: {
-                "controller" : controller,
-            },
-        }, 'The event is emitted');
-        assert.equal(await this.token.state(), 3);
-        assert.equal(await this.token.mController(), controller);
-        await this.token.detachController({from: controller});
-
-
-        //// ICO ///
-
-        controller = roles.controller3;
-        tx_log = await this.token.setIco(controller);
-        assert.web3Event(tx_log, {
-            event: 'ChangeState',
-            args: {
-                "from": 3, // PreIco
-                "to" : 4, // Ico
-            },
-        }, 'The event is emitted');
-        assert.web3Event(tx_log, {
-            event: 'ControllerSet',
-            args: {
-                "controller" : controller,
-            },
-        }, 'The event is emitted');
-        assert.equal(await this.token.state(), 4);
-        assert.equal(await this.token.mController(), controller);
-        await this.token.detachController({from: controller});
-    });
-
-    it('sequence ICO stages', async () => {
-        let controller = roles.controller;
-        let tx_log = await this.token.setSecondPrivateSale(controller);
-        assert.web3Event(tx_log, {
-            event: 'ChangeState',
-            args: {
-                "from": 0, // None
-                "to" : 2, // SecondPrivateSale
-            },
-        }, 'The event is emitted');
-        assert.web3Event(tx_log, {
-            event: 'ControllerSet',
-            args: {
-                "controller" : controller,
-            },
-        }, 'The event is emitted');
-        assert.equal(await this.token.state(), 2);
-        assert.equal(await this.token.mController(), controller);
-        await this.token.detachController({from: controller});
-
-        controller = roles.controller2;
-        await this.token.setPrivateSale(controller).should.be.rejectedWith(ERROR_MSG);
-
-        controller = roles.controller3;
-        tx_log = await this.token.setIco(controller);
-        assert.web3Event(tx_log, {
-            event: 'ChangeState',
-            args: {
-                "from": 2, // SecondPrivateSale
-                "to" : 4, // Ico
-            },
-        }, 'The event is emitted');
-        assert.web3Event(tx_log, {
-            event: 'ControllerSet',
-            args: {
-                "controller" : controller,
-            },
-        }, 'The event is emitted');
-        assert.equal(await this.token.state(), 4);
-        assert.equal(await this.token.mController(), controller);
     });
 });

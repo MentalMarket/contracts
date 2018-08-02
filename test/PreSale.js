@@ -64,7 +64,7 @@ contract('PreSale', function(accounts) {
     it('prohibition of purchase with inactive ico', async function (){
         await presale.sendTransaction({from: roles.investor1, value: web3.toWei(2, 'ether')}).should.be.rejectedWith(ERROR_MSG);
 
-        await token.setPrivateSale(presale.address);
+        await token.setController(presale.address);
 
         await presale.setTime(start_at - 1);
         await presale.sendTransaction({from: roles.investor1, value: web3.toWei(2, 'ether')}).should.be.rejectedWith(ERROR_MSG);
@@ -74,7 +74,7 @@ contract('PreSale', function(accounts) {
     });
 
     it('payment', async function() {
-        await token.setPrivateSale(presale.address);
+        await token.setController(presale.address);
 
         await presale.sendTransaction({from: roles.investor1, value: web3.toWei(2, 'ether')});
         assert.equal((await token.balanceOf(roles.investor1)).toNumber(), MNTL(MNTLperETH * 2));
@@ -85,7 +85,7 @@ contract('PreSale', function(accounts) {
     });
 
     it('payment with 5% bonuses', async function() {
-        await token.setPrivateSale(presale.address);
+        await token.setController(presale.address);
 
         const sum = 16;
         await presale.sendTransaction({from: roles.investor1, value: web3.toWei(sum, 'ether')});
@@ -93,7 +93,7 @@ contract('PreSale', function(accounts) {
     });
 
     it('payment with 10% bonuses', async function() {
-        await token.setPrivateSale(presale.address);
+        await token.setController(presale.address);
 
         const sum = 31;
         await presale.sendTransaction({from: roles.investor1, value: web3.toWei(sum, 'ether')});
@@ -102,7 +102,7 @@ contract('PreSale', function(accounts) {
     });
 
     it('payment with 15% bonuses', async function() {
-        await token.setPrivateSale(presale.address);
+        await token.setController(presale.address);
 
         const sum = 61;
         await presale.sendTransaction({from: roles.investor1, value: web3.toWei(sum, 'ether')});
@@ -111,7 +111,7 @@ contract('PreSale', function(accounts) {
     });
 
     it('payment with 20% bonuses', async function() {
-        await token.setPrivateSale(presale.address);
+        await token.setController(presale.address);
 
         const sum = 121;
         // на 1 акке - 100 ether
@@ -121,7 +121,7 @@ contract('PreSale', function(accounts) {
     });
 
     it('close ICO: failure', async function() {
-        await token.setPrivateSale(presale.address);
+        await token.setController(presale.address);
 
         const sum = Number(web3.toWei(1, 'ether'));
         await presale.sendTransaction({from: roles.investor1, value: sum});
@@ -154,7 +154,7 @@ contract('PreSale', function(accounts) {
     });
 
     it('close ICO: we raised above softcap', async function() {
-        await token.setPrivateSale(presale.address);
+        await token.setController(presale.address);
         await presale.setSoftCap(MNTL(30000));
 
         const sum = Number(web3.toWei(3, 'ether'));
@@ -175,7 +175,7 @@ contract('PreSale', function(accounts) {
     });
 
     it('auto close ICO: we raised equal hardcap', async function() {
-        await token.setPrivateSale(presale.address);
+        await token.setController(presale.address);
         await presale.setHardCap(MNTL(30000));
         const wallet_balance = (await web3.eth.getBalance(roles.wallet)).toNumber();
 
@@ -215,7 +215,7 @@ contract('PreSale', function(accounts) {
     });
 
     it('pausable', async () => {
-        await token.setPrivateSale(presale.address);
+        await token.setController(presale.address);
         const investor1_sum = Number(web3.toWei(1, 'ether')); // 10000 tokens
         await presale.sendTransaction({from: roles.investor1, value: investor1_sum});
 
@@ -264,7 +264,7 @@ contract('PreSale', function(accounts) {
     });
 
     it('change close_at', async () => {
-        await token.setPrivateSale(presale.address);
+        await token.setController(presale.address);
         await presale.setSoftCap(MNTL(10000));
 
         const investor1_sum = MNTL(1);

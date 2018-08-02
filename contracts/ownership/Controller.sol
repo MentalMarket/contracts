@@ -17,13 +17,6 @@ contract Controller is MultiOwnable {
 
     event ControllerSet(address controller);
     event ControllerRetired(address was);
-    event ChangeState(State from, State to);
-
-    enum State { None, PrivateSale, SecondPrivateSale, PreIco, Ico }
-
-    constructor () public {
-        state = State.None;
-    }
 
     modifier onlyController {
         require(msg.sender == mController);
@@ -35,37 +28,12 @@ contract Controller is MultiOwnable {
         _;
     }
 
-    modifier onlySquentially(State _state) {
-        require(_state > state);
-        _;
-    }
-
     modifier whenNotActive() {
         require(mController == address(0));
         _;
     }
 
     // PUBLIC interface
-
-    function setPrivateSale(address controller) public onlyOwner whenNotActive onlySquentially(State.PrivateSale) {
-        setController(controller);
-        changeState(State.PrivateSale);
-    }
-
-    function setSecondPrivateSale(address controller) public onlyOwner whenNotActive onlySquentially(State.SecondPrivateSale) {
-        setController(controller);
-        changeState(State.SecondPrivateSale);
-    }
-
-    function setPreIco(address controller) public onlyOwner whenNotActive onlySquentially(State.PreIco) {
-        setController(controller);
-        changeState(State.PreIco);
-    }
-
-    function setIco(address controller) public onlyOwner whenNotActive onlySquentially(State.Ico) {
-        setController(controller);
-        changeState(State.Ico);
-    }
 
     /// @dev ability for controller to step down
     function detachController() external onlyController {
@@ -77,15 +45,8 @@ contract Controller is MultiOwnable {
     }
 
 
-    // PRIVATE
-
-    function changeState(State _newState) private {
-        emit ChangeState(state, _newState);
-        state = _newState;
-    }
-
     /// @dev sets the controller
-    function setController(address _controller) private {
+    function setController(address _controller) public onlyOwner whenNotActive {
         mController = _controller;
         controllers[_controller] = true;
         emit ControllerSet(mController);
@@ -96,5 +57,4 @@ contract Controller is MultiOwnable {
 
     /// @notice address of entity entitled to mint new tokens
     address public mController;
-    State public state;
 }
