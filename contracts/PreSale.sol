@@ -29,23 +29,19 @@ contract PreSale is BaseCrowdsale {
 
     function priceWithBonus(uint _wei) public view returns(uint256) {
         uint bonus = 0;
-        if (_wei > 120 ether)
+        if (_wei >= 90 ether)
             bonus = 20;
-        else if (_wei > 60 ether)
+        else if (_wei >= 60 ether)
             bonus = 15;
-        else if (_wei > 30 ether)
+        else if (_wei >= 30 ether)
             bonus = 10;
-        else if (_wei > 15 ether)
+        else if (_wei >= 15 ether)
             bonus = 5;
         return price.mul(bonus.add(100)).div(100);
     }
 
     function close() public onlyOwner whenNotPaused afterCloseAt onlyActiveState {
-        if (weSold == hardcap) {
-            withdraw();
-            hardcapSuccess();
-        }
-        else if (weSold >= softcap) {
+        if (weSold >= softcap) {
             withdraw();
             softcapSuccess();
         }
