@@ -6,7 +6,7 @@ contract PreSale is BaseCrowdsale {
 
     constructor (MNTL _token, uint _startAt, uint _closeAt, uint256 _softcap, uint256 _hardcap, address _wallet)
         BaseCrowdsale(_token, _startAt, _closeAt, _softcap, _hardcap, _wallet) public {
-        price = 20000 // our tokens in 1 ether;
+        price = 20000; // our tokens in 1 ether;
     }
 
     function () public payable whenNotPaused mUnderHardcap isCrowdsaleOpen {
