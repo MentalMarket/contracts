@@ -17,18 +17,18 @@ contract PreSaleTestHelper is PreSale, TimeNow {
     }
 
     function getWeSolved() public view returns(uint256) {
-        return weSolved;
+        return weSold;
     }
 
     function setHardCap(uint _hardcap) public {
-        hardcap = _hardcap.mul(uint256(10) ** token.decimals());
+        hardcap = _hardcap;
     }
 
     function setSoftCap(uint _softcap) public {
-        softcap = _softcap.mul(uint256(10) ** token.decimals());
+        softcap = _softcap;
     }
 
     function getAvailableTokens() public view returns(uint256) {
-        return hardcap - weSolved;
+        return hardcap - weSold;
     }
 }

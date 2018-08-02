@@ -6,7 +6,7 @@ contract PreSale is BaseCrowdsale {
 
     constructor (MNTL _token, uint _startAt, uint _closeAt, uint256 _softcap, uint256 _hardcap, address _wallet)
         BaseCrowdsale(_token, _startAt, _closeAt, _softcap, _hardcap, _wallet) public {
-        price = 20000;
+        price = 20000; // our tokens in 1 ether;
     }
 
     function () public payable whenNotPaused mUnderHardcap isCrowdsaleOpen {
@@ -14,7 +14,7 @@ contract PreSale is BaseCrowdsale {
         uint256 tokens = _wei.mul(priceWithBonus(_wei));
         address benefeciary = msg.sender;
         require(tokens > 0);
-        uint256 availableTokens = hardcap - weSolved;
+        uint256 availableTokens = hardcap - weSold;
         if (tokens >= availableTokens) {
             tokens = availableTokens;
             uint256 sumForUs = tokens.div(priceWithBonus(_wei));
@@ -41,11 +41,11 @@ contract PreSale is BaseCrowdsale {
     }
 
     function close() public onlyOwner whenNotPaused afterCloseAt onlyActiveState {
-        if (weSolved == hardcap) {
+        if (weSold == hardcap) {
             withdraw();
             hardcapSuccess();
         }
-        else if (weSolved >= softcap) {
+        else if (weSold >= softcap) {
             withdraw();
             softcapSuccess();
         }
@@ -55,7 +55,7 @@ contract PreSale is BaseCrowdsale {
     }
 
     function refund() public whenNotPaused afterCloseAt onlyForInvestors mUnderSoftcap {
-        if (weSolved < softcap) {
+        if (weSold < softcap) {
             address benefeciary = msg.sender;
             Investment storage investment = deposits[benefeciary];
             if (investment.tokens != 0) {
@@ -63,10 +63,16 @@ contract PreSale is BaseCrowdsale {
                 benefeciary.transfer(investment.sum);
                 emit RefundSuccess(benefeciary, investment.sum);
                 weRaised = weRaised.sub(investment.sum);
-                weSolved = weSolved.sub(investment.tokens);
+                weSold = weSold.sub(investment.tokens);
                 delete deposits[benefeciary];
             }
         }
+    }
+
+    function changeCloseAt(uint _closeAt) public onlyOwner isCrowdsaleOpen {
+        require(_closeAt > startAt);
+        emit ChangeCloseAt(closeAt, _closeAt);
+        closeAt = _closeAt;
     }
 
     // private
@@ -75,7 +81,7 @@ contract PreSale is BaseCrowdsale {
         token.buy(benefeciary, tokens);
         emit PurchaseSuccess(benefeciary, sum);
         weRaised = weRaised.add(sum);
-        weSolved = weSolved.add(tokens);
+        weSold = weSold.add(tokens);
         Investment storage oldDeposit = deposits[benefeciary];
         if (oldDeposit.tokens != 0) {
             deposits[benefeciary] = Investment({
@@ -88,7 +94,7 @@ contract PreSale is BaseCrowdsale {
     }
 
     function payableCallback() private {
-        if (weSolved == hardcap) {
+        if (weSold == hardcap) {
             withdraw();
             hardcapSuccess();
         }

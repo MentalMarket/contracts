@@ -20,6 +20,7 @@ function Util() {
     this.null_address = () => "0x0000000000000000000000000000000000000000";
 
     this.initialSupply = 18000000;
+    this.decimals = web3.toWei(1, 'ether');
 }
 
 module.exports = Util;

@@ -10,9 +10,12 @@
     "zeppelin-solidity": "1.10.0"
   },
   "devDependencies": {
+    "bignumber.js": "^7.2.1",
     "chai-as-promised": "7.1.1",
+    "chai-bignumber": "^2.0.2",
     "keccak": "1.4.0",
-    "truffle-flattener": "1.2.5",
+    "performance-now": "^2.1.0",
+    "truffle-flattener": "^1.2.5",
     "truffle-test-utils": "0.1.0"
   },
   "scripts": {

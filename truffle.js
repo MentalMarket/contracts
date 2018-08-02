@@ -1,3 +1,6 @@
+const util = require('util');
+const exec = util.promisify(require('child_process').exec);
+
 module.exports = {
     networks: {
         development: {
@@ -14,6 +17,12 @@ module.exports = {
             network_id: 4,
             gas: 6000000, // Gas limit used for deploys
             gasPrice: 3000000000
+        }
+    },
+    build: async (options, callback) => {
+        const { stdout, stderr } = await exec('truffle-flattener contracts/PreSale.sol > PreSale_flat.sol');
+        if (stderr) {
+            console.log('stderr:', stderr);
         }
     }
 };
