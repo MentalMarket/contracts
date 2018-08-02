@@ -69,7 +69,7 @@ contract PreSale is BaseCrowdsale {
         }
     }
 
-    function changeCloseAt(uint _closeAt) public onlyOwner mOverSoftcap isCrowdsaleOpen {
+    function changeCloseAt(uint _closeAt) public onlyOwner isCrowdsaleOpen {
         require(_closeAt > startAt);
         emit ChangeCloseAt(closeAt, _closeAt);
         closeAt = _closeAt;

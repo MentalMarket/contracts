@@ -269,9 +269,6 @@ contract('PreSale', function(accounts) {
 
         const investor1_sum = MNTL(1);
         const newCloseAt = start_at + 1;
-        // under softcap
-        await presale.changeCloseAt(newCloseAt).should.be.rejectedWith(ERROR_MSG);
-        // over(and include) softcap
         await presale.sendTransaction({from: roles.investor1, value: investor1_sum});
 
         await presale.changeCloseAt(start_at).should.be.rejectedWith(ERROR_MSG);

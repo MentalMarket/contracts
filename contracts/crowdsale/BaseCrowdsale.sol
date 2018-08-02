@@ -58,11 +58,6 @@ contract BaseCrowdsale is Pausable, IcoStateEnum {
         _;
     }
 
-    modifier mOverSoftcap() {
-        require(weSold >= softcap);
-        _;
-    }
-
     modifier afterCloseAt() {
         require(getCurrentTime() > closeAt);
         _;
