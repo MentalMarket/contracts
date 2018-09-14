@@ -35,11 +35,11 @@ contract MNTL is MintableToken, Pausable {
         emit Transfer(beneficiary, this, amount);
     }
 
-    function transferFrom(address _from, address _to, uint256 _value) public whenNotPaused returns (bool) {
+    function transferFrom(address _from, address _to, uint256 _value) public whenNotActive whenNotPaused returns (bool) {
         return super.transferFrom(_from, _to, _value);
     }
 
-    function transfer(address _to, uint256 _value) public whenNotPaused returns (bool) {
+    function transfer(address _to, uint256 _value) public whenNotActive whenNotPaused returns (bool) {
         return super.transfer(_to, _value);
     }
 }
