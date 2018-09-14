@@ -1,30 +1,54 @@
 pragma solidity ^0.4.24;
 
-import "./crowdsale/BaseCrowdsale.sol";
+import 'zeppelin-solidity/contracts/math/Math.sol';
+import 'zeppelin-solidity/contracts/math/SafeMath.sol';
+import "MNTL.sol";
+import "ownership/Pausable.sol";
+import "ownership/MultiOwnable.sol";
 
-contract PreSale is BaseCrowdsale {
+contract PreSale is Pausable {
+    using Math for uint256;
+    using SafeMath for uint256;
 
-    constructor (MNTL _token, uint _startAt, uint _closeAt, uint256 _softcap, uint256 _hardcap, address _wallet)
-        BaseCrowdsale(_token, _startAt, _closeAt, _softcap, _hardcap, _wallet) public {
+    /// @notice ICO token
+    MNTL public token;
+
+    /// @notice token price
+    uint256 public price;
+    address public wallet; // withdraw wallet
+
+    struct Investment {
+        uint256 sum;
+        uint256 tokens;
+    }
+
+    mapping(address => Investment) deposits; // для хранения каждого вложения
+
+    event PurchaseSuccess(address indexed benefeciary, uint256 sum);
+    event RefundSuccess(address indexed benefeciary, uint256 sum);
+    event CrowdsaleStatus(string status);
+
+    // modifiers
+    modifier onlyActive() {
+        require(token != address(0));
+        _;
+    }
+
+    constructor (MNTL _token, address _wallet)
+        public {
+        token = _token;
+        wallet = _wallet;
         price = 20000; // our tokens in 1 ether;
     }
 
-    function () public payable whenNotPaused mUnderHardcap isCrowdsaleOpen {
+    // PUBLIC
+
+    function () public payable whenNotPaused onlyActive {
+        address benefeciary = msg.sender;
         uint256 _wei = msg.value;
         uint256 tokens = _wei.mul(priceWithBonus(_wei));
-        address benefeciary = msg.sender;
         require(tokens > 0);
-        uint256 availableTokens = hardcap - weSold;
-        if (tokens >= availableTokens) {
-            tokens = availableTokens;
-            uint256 sumForUs = tokens.div(priceWithBonus(_wei));
-            uint256 sumForBack = _wei.sub(sumForUs);
-            benefeciary.transfer(sumForBack);
-            successPurchase(benefeciary, sumForUs, tokens);
-        } else {
-            successPurchase(benefeciary, _wei, tokens);
-        }
-        payableCallback();
+        successPurchase(benefeciary, _wei, tokens);
     }
 
     function priceWithBonus(uint _wei) public view returns(uint256) {
@@ -40,44 +64,45 @@ contract PreSale is BaseCrowdsale {
         return price.mul(bonus.add(100)).div(100);
     }
 
-    function close() public onlyOwner whenNotPaused afterCloseAt onlyActiveState {
-        if (weSold >= softcap) {
-            withdraw();
-            softcapSuccess();
-        }
-        else {
-            failure();
+    function close() public onlyOwner whenNotPaused onlyActive {
+        require(address(this).balance == 0);
+        token.detachController();
+        CrowdsaleStatus("close");
+    }
+
+    function refund(address benefeciary) public onlyOwner {
+        Investment storage investment = deposits[benefeciary];
+        if (investment.tokens != 0) {
+            token.refund(benefeciary, investment.tokens);
+            benefeciary.transfer(investment.sum);
+            emit RefundSuccess(benefeciary, investment.sum);
+            delete deposits[benefeciary];
         }
     }
 
-    function refund() public whenNotPaused afterCloseAt onlyForInvestors mUnderSoftcap {
-        if (weSold < softcap) {
-            address benefeciary = msg.sender;
-            Investment storage investment = deposits[benefeciary];
-            if (investment.tokens != 0) {
-                token.refund(benefeciary, investment.tokens);
-                benefeciary.transfer(investment.sum);
-                emit RefundSuccess(benefeciary, investment.sum);
-                weRaised = weRaised.sub(investment.sum);
-                weSold = weSold.sub(investment.tokens);
-                delete deposits[benefeciary];
-            }
-        }
+    function setWithdrawWallet(address _wallet) public onlyOwner {
+        wallet = _wallet;
     }
 
-    function changeCloseAt(uint _closeAt) public onlyOwner isCrowdsaleOpen {
-        require(_closeAt > startAt);
-        emit ChangeCloseAt(closeAt, _closeAt);
-        closeAt = _closeAt;
+    function withdraw(uint sum) public onlyOwner {
+        require(sum > 0 && sum <= address(this).balance);
+        wallet.transfer(sum);
+    }
+
+
+    // INTERNAL
+
+    /// @dev to be overridden in tests
+    function getCurrentTime() internal constant returns (uint) {
+        return now;
     }
 
     // private
 
     function successPurchase(address benefeciary, uint256 sum, uint256 tokens) private {
+        token.mint(token, tokens);
         token.buy(benefeciary, tokens);
         emit PurchaseSuccess(benefeciary, sum);
-        weRaised = weRaised.add(sum);
-        weSold = weSold.add(tokens);
         Investment storage oldDeposit = deposits[benefeciary];
         if (oldDeposit.tokens != 0) {
             deposits[benefeciary] = Investment({
@@ -86,13 +111,6 @@ contract PreSale is BaseCrowdsale {
             });
         } else {
             deposits[benefeciary] = Investment({tokens: tokens, sum: sum});
-        }
-    }
-
-    function payableCallback() private {
-        if (weSold == hardcap) {
-            withdraw();
-            hardcapSuccess();
         }
     }
 }
