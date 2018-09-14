@@ -30,7 +30,7 @@ contract PreSale is Pausable {
     event SendBounty(address indexed benefeciary, uint256 tokens);
 
     modifier whenActive() {
-        require(token.isActiveController());
+        require(token.mController() == address(this));
         _;
     }
 
