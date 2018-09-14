@@ -10,17 +10,6 @@ contract MNTL is MintableToken, Pausable {
     string public constant symbol = "MNTL";
     uint8 public constant decimals = 18;
 
-    modifier balanceAvailable(uint256 amount) {
-        require(balances[this] >= amount);
-        _;
-    }
-
-    modifier whenNotActiveIco() {
-        require(mController == address(0));
-        _;
-    }
-
-
     /**
      * Constructor function
      *
@@ -31,7 +20,7 @@ contract MNTL is MintableToken, Pausable {
       balances[this] = 0;
     }
 
-    function buy(address beneficiary, uint256 amount) external onlyController balanceAvailable(amount) {
+    function buy(address beneficiary, uint256 amount) external onlyController {
         require(beneficiary != address(0));
         balances[this] = balances[this].sub(amount);
         balances[beneficiary] = balances[beneficiary].add(amount);
@@ -41,20 +30,17 @@ contract MNTL is MintableToken, Pausable {
     function refund(address beneficiary, uint256 amount) external onlyInController {
         require(beneficiary != address(0));
         require(amount > 0 && balances[beneficiary] >= amount);
-        balances[this] = balances[this].add(amount);
+        totalSupply_ = totalSupply_.sub(amount);
         balances[beneficiary] = balances[beneficiary].sub(amount);
+
         emit Transfer(beneficiary, this, amount);
     }
 
-    function transferFrom(address _from, address _to, uint256 _value) public whenNotPaused whenNotActiveIco returns (bool) {
+    function transferFrom(address _from, address _to, uint256 _value) public whenNotPaused returns (bool) {
         return super.transferFrom(_from, _to, _value);
     }
 
-    function transfer(address _to, uint256 _value) public whenNotPaused whenNotActiveIco returns (bool) {
+    function transfer(address _to, uint256 _value) public whenNotPaused returns (bool) {
         return super.transfer(_to, _value);
-    }
-
-    function availableTokens() public view returns(uint) {
-        return balances[this];
     }
 }

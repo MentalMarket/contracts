@@ -27,23 +27,19 @@ contract PreSale is Pausable {
     event PurchaseSuccess(address indexed benefeciary, uint256 sum);
     event RefundSuccess(address indexed benefeciary, uint256 sum);
     event CrowdsaleStatus(string status);
-
-    // modifiers
-    modifier onlyActive() {
-        require(token != address(0));
-        _;
-    }
+    event SendBounty(address indexed benefeciary, uint256 tokens);
 
     constructor (MNTL _token, address _wallet)
         public {
         token = _token;
         wallet = _wallet;
         price = 20000; // our tokens in 1 ether;
+        CrowdsaleStatus("start");
     }
 
     // PUBLIC
 
-    function () public payable whenNotPaused onlyActive {
+    function () public payable whenNotPaused {
         address benefeciary = msg.sender;
         uint256 _wei = msg.value;
         uint256 tokens = _wei.mul(priceWithBonus(_wei));
@@ -64,7 +60,7 @@ contract PreSale is Pausable {
         return price.mul(bonus.add(100)).div(100);
     }
 
-    function close() public onlyOwner whenNotPaused onlyActive {
+    function close() public onlyOwner whenNotPaused {
         require(address(this).balance == 0);
         token.detachController();
         CrowdsaleStatus("close");
@@ -87,6 +83,13 @@ contract PreSale is Pausable {
     function withdraw(uint sum) public onlyOwner {
         require(sum > 0 && sum <= address(this).balance);
         wallet.transfer(sum);
+    }
+
+    function sendBounty(address benefeciary, uint256 tokens) public onlyOwner {
+        require(benefeciary != address(0) && tokens > 0);
+        token.mint(token, tokens);
+        token.buy(benefeciary, tokens);
+        emit SendBounty(benefeciary, tokens);
     }
 
 
