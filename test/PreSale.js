@@ -170,6 +170,7 @@ contract('PreSale', function(accounts) {
                 status: "close"
             },
         });
+        await presale.refund(roles.investor1).should.be.rejectedWith(ERROR_MSG); // after close crowdsale
     });
 
     it('send bounty', async () => {

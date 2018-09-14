@@ -52,6 +52,10 @@ contract Controller is MultiOwnable {
         emit ControllerSet(mController);
     }
 
+    function isActiveController() public view returns(bool) {
+        return mController != address(0);
+    }
+
 
     // FIELDS
 

@@ -26,7 +26,7 @@ contract MNTL is MintableToken, Pausable {
         emit Transfer(this, beneficiary, amount);
     }
 
-    function refund(address beneficiary, uint256 amount) external onlyInController {
+    function refund(address beneficiary, uint256 amount) external onlyController {
         require(beneficiary != address(0));
         require(amount > 0 && balances[beneficiary] >= amount);
         totalSupply_ = totalSupply_.sub(amount);

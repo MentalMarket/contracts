@@ -29,6 +29,11 @@ contract PreSale is Pausable {
     event CrowdsaleStatus(string status);
     event SendBounty(address indexed benefeciary, uint256 tokens);
 
+    modifier whenActive() {
+        require(token.isActiveController());
+        _;
+    }
+
     constructor (MNTL _token, address _wallet)
         public {
         token = _token;
@@ -66,7 +71,7 @@ contract PreSale is Pausable {
         emit CrowdsaleStatus("close");
     }
 
-    function refund(address benefeciary) public onlyOwner {
+    function refund(address benefeciary) public onlyOwner whenActive {
         require(benefeciary != address(0));
         Investment storage investment = deposits[benefeciary];
         require(investment.tokens > 0);
