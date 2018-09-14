@@ -2,7 +2,6 @@ pragma solidity ^0.4.23;
 
 import "./ownership/Pausable.sol";
 import "./ownership/MintableToken.sol";
-import "./crowdsale/iCrowdsale.sol";
 
 contract MNTL is MintableToken, Pausable {
     // Public variables of the token

@@ -2,9 +2,9 @@ pragma solidity ^0.4.24;
 
 import 'zeppelin-solidity/contracts/math/Math.sol';
 import 'zeppelin-solidity/contracts/math/SafeMath.sol';
-import "MNTL.sol";
-import "ownership/Pausable.sol";
-import "ownership/MultiOwnable.sol";
+import "./MNTL.sol";
+import "./ownership/Pausable.sol";
+import "./ownership/MultiOwnable.sol";
 
 contract PreSale is Pausable {
     using Math for uint256;
@@ -34,7 +34,7 @@ contract PreSale is Pausable {
         token = _token;
         wallet = _wallet;
         price = 20000; // our tokens in 1 ether;
-        CrowdsaleStatus("start");
+        emit CrowdsaleStatus("start");
     }
 
     // PUBLIC
@@ -63,7 +63,7 @@ contract PreSale is Pausable {
     function close() public onlyOwner whenNotPaused {
         require(address(this).balance == 0);
         token.detachController();
-        CrowdsaleStatus("close");
+        emit CrowdsaleStatus("close");
     }
 
     function refund(address benefeciary) public onlyOwner {
