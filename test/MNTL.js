@@ -4,7 +4,7 @@ require('chai').use(require('chai-as-promised')).should();
 require('chai').use(require('chai-bignumber')(BigNumber));
 const createKeccakHash = require('keccak');
 const Asserts = require('./helpers/asserts');
-const Token = artifacts.require('MNTLTestHelper');
+const Token = artifacts.require('MNTL');
 const Utils =  require('./helpers/utils.js');
 const now = require("performance-now");
 
@@ -16,8 +16,6 @@ contract('MNTL', function(accounts) {
     const showGasUsed = false;
     const ERROR_MSG = 'VM Exception while processing transaction: revert';
     const decimals = utils.decimals;
-    const initialSupply = MNTL(utils.initialSupply);
-    const aboveInitialSupply = initialSupply.add(MNTL(1));
     const roles = utils.roles(accounts);
     let start_time;
 
@@ -56,47 +54,45 @@ contract('MNTL', function(accounts) {
 
     it('token initial supply', async () => {
         const totalSupply = await this.token.totalSupply();
-        totalSupply.should.be.bignumber.equal(initialSupply);
+        totalSupply.should.be.bignumber.equal(0);
     });
 
     it('buy token', async () => {
         const _to = roles.investor1;
 
         const amount = MNTL(10);
-        (await this.token.availableTokens()).should.be.bignumber.equal(initialSupply);
         await this.token.buy(_to, amount).should.be.rejectedWith(ERROR_MSG); // permitted only a controller
 
         await this.token.setController(roles.controller);
+        await this.token.mint(this.token.address, amount, {from: roles.controller});
         await this.token.buy(_to, amount, {from: roles.controller});
         assert.equal((await this.token.balanceOf(_to)).toNumber(), amount);
-        assert.equal((await this.token.availableTokens()).toNumber(), initialSupply - amount);
-
-        await this.token.buy(_to, initialSupply, {from: roles.controller}).should.be.rejectedWith(ERROR_MSG); // запрещена покупка кол-ва токенов больше баланса
+        assert.equal((await this.token.totalSupply()).toNumber(), amount);
     });
 
-    it('burn token', async () => {
-        await this.token.burn(this.token.address, initialSupply).should.be.rejectedWith(ERROR_MSG); // permit only controller
+    it('mint token', async () => {
+        const initialSupply = MNTL(10);
+        await this.token.mint(this.token.address, initialSupply).should.be.rejectedWith(ERROR_MSG); // permit only controller
         await this.token.setController(roles.controller);
 
-        await this.token.burn(this.token.address, aboveInitialSupply).should.be.rejectedWith(ERROR_MSG); // запрещено сжигание токенов больше баланса
-
-        const tx_log = await this.token.burn(this.token.address, initialSupply, {from: roles.controller}); // сжигаем все токены
+        const tx_log = await this.token.mint(this.token.address, initialSupply, {from: roles.controller});
         assert.web3Event(tx_log, {
-            event: 'Burn',
+            event: 'Mint',
             args: {
-                burner: this.token.address,
-                value: initialSupply.toNumber(),
+                to: this.token.address,
+                amount: initialSupply.toNumber(),
             }
         }, 'The event is emitted');
         assert.web3Event(tx_log, {
             event: 'Transfer',
             args: {
-                from: this.token.address,
-                to: utils.null_address(),
+                from: utils.null_address(),
+                to: this.token.address,
                 value: initialSupply.toNumber(),
             }
         }, 'The event is emitted');
-        assert.equal((await this.token.balanceOf(this.token.address)).toNumber(), 0);
+        assert.equal((await this.token.balanceOf(this.token.address)).toNumber(), initialSupply.toNumber());
+        assert.equal((await this.token.totalSupply()).toNumber(), initialSupply.toNumber());
     });
 
     it('refund token', async () => {
@@ -104,6 +100,7 @@ contract('MNTL', function(accounts) {
 
         const amount = MNTL(10);
         const invalid_amount = MNTL(11);
+        await this.token.mint(this.token.address, amount, {from: roles.controller});
         await this.token.buy(roles.investor1, amount, {from: roles.controller});
 
         await this.token.refund(roles.investor1, invalid_amount, {from: roles.controller}).should.be.rejectedWith(ERROR_MSG); // запрещен возврат большего кол-ва токенов
@@ -117,7 +114,7 @@ contract('MNTL', function(accounts) {
             }
         }, 'The event is emitted');
         assert.equal((await this.token.balanceOf(roles.investor1)).toNumber(), 0);
-        assert.equal((await this.token.balanceOf(this.token.address)).toNumber(), initialSupply);
+        assert.equal((await this.token.balanceOf(this.token.address)).toNumber(), 0);
     });
 
     it('transfer tokens', async () => {
@@ -126,7 +123,9 @@ contract('MNTL', function(accounts) {
 
         // buy tokens
         await this.token.setController(roles.controller);
-        await this.token.buy(roles.investor1, tokens1.add(tokens2), {from: roles.controller});
+        const amount = tokens1.add(tokens2);
+        await this.token.mint(this.token.address, amount, {from: roles.controller});
+        await this.token.buy(roles.investor1, amount, {from: roles.controller});
         await this.token.detachController({from: roles.controller});
 
         // transfer tokens
