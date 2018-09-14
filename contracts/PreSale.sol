@@ -67,13 +67,14 @@ contract PreSale is Pausable {
     }
 
     function refund(address benefeciary) public onlyOwner {
+        require(benefeciary != address(0));
         Investment storage investment = deposits[benefeciary];
-        if (investment.tokens != 0) {
-            token.refund(benefeciary, investment.tokens);
-            benefeciary.transfer(investment.sum);
-            emit RefundSuccess(benefeciary, investment.sum);
-            delete deposits[benefeciary];
-        }
+        require(investment.tokens > 0);
+
+        token.refund(benefeciary, investment.tokens);
+        benefeciary.transfer(investment.sum);
+        emit RefundSuccess(benefeciary, investment.sum);
+        delete deposits[benefeciary];
     }
 
     function setWithdrawWallet(address _wallet) public onlyOwner {
@@ -92,13 +93,6 @@ contract PreSale is Pausable {
         emit SendBounty(benefeciary, tokens);
     }
 
-
-    // INTERNAL
-
-    /// @dev to be overridden in tests
-    function getCurrentTime() internal constant returns (uint) {
-        return now;
-    }
 
     // private
 
