@@ -3,7 +3,7 @@ require('chai').use(require('chai-as-promised')).should();
 const createKeccakHash = require('keccak');
 const Reverter = require('./helpers/reverter');
 const Asserts = require('./helpers/asserts');
-const Token = artifacts.require('./test_helpers/MNTLTestHelper.sol');
+const Token = artifacts.require('./test_helpers/MNTL.sol');
 const PreSale = artifacts.require("./test_helpers/PreSaleTestHelper.sol");
 const Utils =  require('./helpers/utils.js');
 
@@ -17,10 +17,6 @@ contract('PreSale', function(accounts) {
     let presale;
     const ERROR_MSG = 'VM Exception while processing transaction: revert';
     const decimals = utils.decimals;
-
-    const date = new Date();
-    const start_at = (new Date(date.getFullYear(), date.getMonth(), 1)).getTime() / 1000;  // ICO start
-    const close_at = (new Date(date.getFullYear(), date.getMonth() + 1, 0)).getTime() / 1000; // ICO close
     const roles = utils.roles(accounts);
 
     /// starting exchange rate of MNTL
@@ -40,37 +36,14 @@ contract('PreSale', function(accounts) {
     }
 
     before('setup', async () => {
-        const date = new Date();
-        const start_at = (new Date(date.getFullYear(), date.getMonth(), 1)).getTime() / 1000;
-        const close_at = (new Date(date.getFullYear(), date.getMonth() + 1, 0)).getTime() / 1000;
-        const softcap = MNTL(1250000);
-        const hardcap = MNTL(3250000);
-
         token = await Token.new();
-        presale = await PreSale.new(token.address, start_at, close_at, softcap, hardcap, roles.wallet);
+        presale = await PreSale.new(token.address, roles.wallet);
         await reverter.snapshot();
     });
 
     it('owner presale', async function () {
         let crowdsale_owner = await presale.owner();
         assert.equal(crowdsale_owner, roles.owner1);
-    });
-
-    it('period ICO', async function () {
-        assert.equal(await presale.startAt(), start_at);
-        assert.equal(await presale.closeAt(), close_at);
-    });
-
-    it('prohibition of purchase with inactive ico', async function (){
-        await presale.sendTransaction({from: roles.investor1, value: web3.toWei(2, 'ether')}).should.be.rejectedWith(ERROR_MSG);
-
-        await token.setController(presale.address);
-
-        await presale.setTime(start_at - 1);
-        await presale.sendTransaction({from: roles.investor1, value: web3.toWei(2, 'ether')}).should.be.rejectedWith(ERROR_MSG);
-
-        await presale.setTime(close_at + 1);
-        await presale.sendTransaction({from: roles.investor1, value: web3.toWei(2, 'ether')}).should.be.rejectedWith(ERROR_MSG);
     });
 
     it('payment', async function() {
@@ -81,7 +54,9 @@ contract('PreSale', function(accounts) {
 
         await presale.sendTransaction({from: roles.investor3, value: web3.toWei(1, 'ether')});
         assert.equal((await token.balanceOf(roles.investor3)).toNumber(), MNTL(MNTLperETH));
-        assert.equal((await token.balanceOf(token.address)).toNumber(), MNTL(utils.initialSupply - MNTLperETH * 3));
+
+        assert.equal((await token.totalSupply()).toNumber(), MNTL(MNTLperETH * 3));
+        assert.equal((await token.balanceOf(token.address)).toNumber(), MNTL(0));
     });
 
     it('payment with 5% bonuses', async function() {
@@ -120,93 +95,6 @@ contract('PreSale', function(accounts) {
         assert.equal((await token.balanceOf(roles.investor1)).toNumber(), MNTL_from(sum, 0.2));
     });
 
-    it('close ICO: failure', async function() {
-        await token.setController(presale.address);
-
-        const sum = Number(web3.toWei(1, 'ether'));
-        await presale.sendTransaction({from: roles.investor1, value: sum});
-
-        const investor1_balance = (await web3.eth.getBalance(roles.investor1)).toNumber();
-        const we_raised = (await presale.getWeRaised()).toNumber();
-        assert.equal(we_raised, sum);
-
-        await presale.setTime(close_at + 1);
-        let tx_log = await presale.close();
-        assert.web3Event(tx_log, {
-            event: 'StateChanged',
-            args: {
-                "_state": 3, // FAILURE
-            },
-        }, 'The event is emitted');
-
-        // refund
-        tx_log = await presale.refund({from: roles.investor1});
-        assert.web3Event(tx_log, {
-            event: 'RefundSuccess',
-            args: {
-                "benefeciary": roles.investor1,
-                "sum" : sum,
-            },
-        }, 'The event is emitted');
-
-        const investor1_balance_after_refund = (await web3.eth.getBalance(roles.investor1)).toNumber();
-        assert.equal(investor1_balance_after_refund > investor1_balance, true);
-    });
-
-    it('close ICO: we raised above softcap', async function() {
-        await token.setController(presale.address);
-        await presale.setSoftCap(MNTL(30000));
-
-        const sum = Number(web3.toWei(3, 'ether'));
-        await presale.sendTransaction({from: roles.investor1, value: sum});
-        assert.equal(await token.balanceOf(roles.investor1), MNTL(30000));
-
-        await presale.setTime(close_at + 1); // close ICO
-        const wallet_balance = (await web3.eth.getBalance(roles.wallet)).toNumber();
-        const tx_log = await presale.close();
-        assert.web3Event(tx_log, {
-            event: 'StateChanged',
-            args: {
-                "_state": 7, // SOFTCAP_SUCCESS
-            },
-        }, 'The event is emitted');
-        // withdraw to wallet
-        assert.equal((await web3.eth.getBalance(roles.wallet)).toNumber(), wallet_balance + sum);
-    });
-
-    it('auto close ICO: we raised equal hardcap', async function() {
-        await token.setController(presale.address);
-        await presale.setHardCap(MNTL(30000));
-        const wallet_balance = (await web3.eth.getBalance(roles.wallet)).toNumber();
-
-        const total_sum = Number(web3.toWei(3, 'ether'));
-        const investor1_sum = Number(web3.toWei(2, 'ether'));
-        await presale.sendTransaction({from: roles.investor1, value: investor1_sum});
-        assert.equal(await token.balanceOf(roles.investor1), MNTL(20000));
-
-        const investor2_wallet_balance_start = (await web3.eth.getBalance(roles.investor2)).toNumber();
-        const investor2_sum = Number(web3.toWei(2, 'ether'));
-        const tx_log = await presale.sendTransaction({from: roles.investor2, value: investor2_sum});
-        assert.web3Event(tx_log, {
-            event: 'StateChanged',
-            args: {
-                "_state": 6, // HARDCAP_SUCCESS
-            },
-        }, 'The event is emitted');
-        assert.equal(await token.balanceOf(roles.investor2), MNTL(10000));
-        const investor2_wallet_balance = (await web3.eth.getBalance(roles.investor2)).toNumber();
-        // возвращен 1 эфир за вычетом комиссии
-        assert.equal(investor2_wallet_balance > (investor2_wallet_balance_start - Number(web3.toWei(2, 'ether'))), true);
-
-        // нет свободных токенов
-        const investor3_sum = Number(web3.toWei(1, 'ether'));
-        await presale.sendTransaction({from: roles.investor3, value: investor3_sum}).should.be.rejectedWith(ERROR_MSG);
-
-        assert.equal(await presale.getWeSolved(), MNTL(30000));
-        assert.equal(await presale.getWeRaised(), Number(web3.toWei(3, 'ether')));
-        assert.equal((await web3.eth.getBalance(roles.wallet)).toNumber(), wallet_balance + total_sum);
-    });
-
     it('set withdraw wallet', async () => {
         assert.equal(await presale.wallet(), roles.wallet);
         await presale.setWithdrawWallet(roles.nobody);
@@ -232,7 +120,6 @@ contract('PreSale', function(accounts) {
         const tokens = MNTL(1);
 
         await presale.sendTransaction({from: roles.investor1, value: investor1_sum}).should.be.rejectedWith(ERROR_MSG);
-        await presale.refund({from: roles.investor1}).should.be.rejectedWith(ERROR_MSG);
         await token.transfer(roles.investor2, tokens, {from: roles.investor1}).should.be.rejectedWith(ERROR_MSG);
         await token.approve(roles.owner1, tokens, {from: roles.investor1});
         await token.transferFrom(roles.investor1, roles.investor2, tokens).should.be.rejectedWith(ERROR_MSG); // {from: roles.owner1}
@@ -249,39 +136,76 @@ contract('PreSale', function(accounts) {
 
         await presale.sendTransaction({from: roles.investor1, value: investor1_sum});
 
-        assert.equal(await presale.isActive(), true);
         // denied transfer operations while ICO is active
         await token.transfer(roles.investor2, tokens, {from: roles.investor1}).should.be.rejectedWith(ERROR_MSG);
         await token.transferFrom(roles.investor1, roles.investor2, tokens).should.be.rejectedWith(ERROR_MSG);
 
         // close ICO
-        await presale.setTime(close_at + 1); // close ICO
+        const total_sum = investor1_sum * 2;
+        await presale.withdraw(total_sum);
+        // const sum = await web3.eth.getBalance(presale.address);
+        // console.log(sum.toNumber());
         await presale.close();
-        assert.equal(await presale.isActive(), false);
         // permit transfer operations after close ICO
         await token.transfer(roles.investor2, tokens, {from: roles.investor1});
         await token.transferFrom(roles.investor1, roles.investor2, tokens);
     });
 
-    it('change close_at', async () => {
+    it('close ICO (with withdraw)', async () => {
         await token.setController(presale.address);
-        await presale.setSoftCap(MNTL(10000));
-
-        const investor1_sum = MNTL(1);
-        const newCloseAt = start_at + 1;
+        const investor1_sum = Number(web3.toWei(1, 'ether')); // 10000 tokens
         await presale.sendTransaction({from: roles.investor1, value: investor1_sum});
 
-        await presale.changeCloseAt(start_at).should.be.rejectedWith(ERROR_MSG);
-        await presale.changeCloseAt(newCloseAt, {from: roles.investor1}).should.be.rejectedWith(ERROR_MSG);
+        await presale.close().should.be.rejectedWith(ERROR_MSG); // presale balance > 0
 
-        const tx_log = await presale.changeCloseAt(newCloseAt);
+        const wallet_balance = (await web3.eth.getBalance(roles.wallet)).toNumber();
+        await presale.withdraw(investor1_sum);
+        assert.equal((await web3.eth.getBalance(roles.wallet)).toNumber() - wallet_balance, investor1_sum);
+        assert.equal((await web3.eth.getBalance(presale.address)).toNumber(), 0);
+
+        const tx_log = await presale.close();
         assert.web3Event(tx_log, {
-            event: 'ChangeCloseAt',
+            event: 'CrowdsaleStatus',
             args: {
-                from: close_at,
-                to: newCloseAt,
+                status: "close"
             },
         });
-        assert.equal(await presale.closeAt(), newCloseAt);
+        await presale.refund(roles.investor1).should.be.rejectedWith(ERROR_MSG); // after close crowdsale
+    });
+
+    it('send bounty', async () => {
+        await token.setController(presale.address);
+        const tokens = MNTL(10); // 10000 tokens
+        const tx_log = await presale.sendBounty(roles.investor1, tokens);
+        assert.web3Event(tx_log, {
+            event: 'SendBounty',
+            args: {
+                benefeciary: roles.investor1,
+                tokens: tokens
+            },
+        });
+        assert.equal((await token.balanceOf(roles.investor1)).toNumber(), tokens);
+    });
+
+    it('refund', async () => {
+        await token.setController(presale.address);
+        const investor1_sum = Number(web3.toWei(1, 'ether')); // 10000 tokens
+        await presale.sendTransaction({from: roles.investor1, value: investor1_sum});
+        const investor1_balance = (await web3.eth.getBalance(roles.investor1)).toNumber();
+
+        const investor1_tokens = (await token.balanceOf(roles.investor1)).toNumber();
+        assert.equal((await token.totalSupply()).toNumber(), investor1_tokens);
+
+        await presale.refund(roles.investor2).should.be.rejectedWith(ERROR_MSG); // investor2 token balance == 0
+        const tx_log = await presale.refund(roles.investor1);
+        assert.web3Event(tx_log, {
+            event: 'RefundSuccess',
+            args: {
+                benefeciary: roles.investor1,
+                sum: investor1_sum
+            },
+        });
+        assert.equal((await token.totalSupply()).toNumber(), 0);
+        assert.equal((await web3.eth.getBalance(roles.investor1)).toNumber(), investor1_balance + investor1_sum);
     });
 });
