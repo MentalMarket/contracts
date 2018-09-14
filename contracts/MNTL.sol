@@ -1,10 +1,10 @@
 pragma solidity ^0.4.23;
 
 import "./ownership/Pausable.sol";
-import "./ownership/BurnableToken.sol";
+import "./ownership/MintableToken.sol";
 import "./crowdsale/iCrowdsale.sol";
 
-contract MNTL is BurnableToken, Pausable {
+contract MNTL is MintableToken, Pausable {
     // Public variables of the token
     string public constant name = "MentalCoin";
     string public constant symbol = "MNTL";
@@ -28,9 +28,7 @@ contract MNTL is BurnableToken, Pausable {
      */
     constructor (
     ) public {
-      totalSupply_ = 83125000 * 1 ether;
-      balances[this] = totalSupply_;
-      emit Transfer(address(0), this, totalSupply_);
+      balances[this] = 0;
     }
 
     function buy(address beneficiary, uint256 amount) external onlyController balanceAvailable(amount) {
